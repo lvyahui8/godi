@@ -4,11 +4,15 @@ import (
 	"reflect"
 )
 
+// BeanSupport bean的基类型
 type BeanSupport interface {
+	// BeanName bean可以自定义名称。默认名称为全类型限定名
 	BeanName() string
-	Init()
+	// Init 支持Bean在依赖注入完成后执行Init操作
+	Init() error
 }
 
+// Bean 用于嵌套在struct中，声明一个Bean
 type Bean struct {
 }
 
@@ -16,8 +20,8 @@ func (b *Bean) BeanName() string {
 	return ""
 }
 
-func (b *Bean) Init() {
-
+func (b *Bean) Init() error {
+	return nil
 }
 
 var beanMap = make(map[string]any)
@@ -68,7 +72,10 @@ func getBean(v any) any {
 		}
 	}
 	t = val.Interface().(BeanSupport)
-	t.Init()
+	err := t.Init()
+	if err != nil {
+		panic(err)
+	}
 	beanMap[beanName] = val.Interface()
 	return val.Interface()
 }

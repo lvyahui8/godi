@@ -1,6 +1,9 @@
 package main
 
 func main() {
-	service := GetBean[*UserService]()
+	service := GetBean[*NormalUserService]()
 	service.SayHello()
+
+	controller := GetBean[*HomeController]()
+	controller.Index()
 }
