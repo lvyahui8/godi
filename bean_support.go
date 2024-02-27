@@ -16,26 +16,58 @@ type BeanSupport interface {
 type Bean struct {
 }
 
+// BeanName Bean可以重写这个方法以定义bean名称。
 func (b *Bean) BeanName() string {
 	return ""
 }
 
+// Init Bean可以重写这个方法以完成一些依赖注入完成之后的初始化动作。
 func (b *Bean) Init() error {
 	return nil
 }
 
-var beanMap = make(map[string]any)
+type BeanKey string
 
-var beanType = reflect.TypeOf((*BeanSupport)(nil)).Elem()
-
-func GetBean[T BeanSupport]() T {
-	var t T
-	return getBean(t).(T)
+type Node struct {
+	key       BeanKey
+	object    any
+	completed bool
+	private   bool
+	In        map[BeanKey]*Edge
+	Out       map[BeanKey]*Edge
 }
 
-func getBean(v any) any {
-	var t BeanSupport
-	t = v.(BeanSupport)
+type Edge struct {
+	from BeanKey
+	to   BeanKey
+	// 指针依赖还是struct依赖
+	ptr bool
+}
+
+// Graph bean的依赖关系图
+type Graph struct {
+	nodes map[BeanKey]*Node
+}
+
+func NewGraph() *Graph {
+	return &Graph{
+		nodes: make(map[BeanKey]*Node),
+	}
+}
+
+func (g *Graph) AddEdge(from, to Node) {
+	if from.Out != nil {
+		if _, ok := from.Out[to.key]; ok {
+			// 边已经存在
+			return
+		}
+	}
+	edge := &Edge{from: from.key, to: to.key}
+	from.Out[to.key] = edge
+	to.In[from.key] = edge
+}
+
+func getBeanKey(t BeanSupport) BeanKey {
 	var beanName string
 	val := reflect.ValueOf(t)
 	if !val.IsNil() {
@@ -44,10 +76,13 @@ func getBean(v any) any {
 	if beanName == "" {
 		beanName = val.Type().String()
 	}
-	if b, ok := beanMap[beanName]; ok {
-		return b
-	}
-	val = reflect.New(reflect.TypeOf(t).Elem())
+	return BeanKey(beanName)
+}
+
+func inject(v any) any {
+	var t BeanSupport
+	t = v.(BeanSupport)
+	val := reflect.New(reflect.TypeOf(t).Elem())
 	// 懒加载构造和初始化bean
 	// 遍历属性，看是否需要依赖注入
 	elem := val.Elem()
@@ -76,6 +111,17 @@ func getBean(v any) any {
 	if err != nil {
 		panic(err)
 	}
-	beanMap[beanName] = val.Interface()
+
 	return val.Interface()
+}
+
+func getBean(v any) any {
+	beanName := getBeanKey(v.(BeanSupport))
+	if b, ok := container.GetBean(beanName); ok {
+		return b
+	}
+
+	inject(v)
+	//container.PutBean(beanName, val.Interface())
+	return nil
 }
