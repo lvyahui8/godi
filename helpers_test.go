@@ -40,4 +40,8 @@ func TestIsBean(t *testing.T) {
 	require.True(t, IsBean(TS01{}))
 	require.True(t, IsBean(&TS02{}))
 	require.True(t, IsBean(&TS02{}))
+	require.True(t, IsBean(TS03{}))
+	require.True(t, IsBean(&TS03{}))
+	require.True(t, IsBean(TS04{}))
+	require.True(t, IsBean(&TS04{}))
 }
