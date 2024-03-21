@@ -12,10 +12,6 @@ type BeanSupport interface {
 	Init() error
 }
 
-// Bean 用于嵌套在struct中，声明一个Bean
-type Bean struct {
-}
-
 // BeanName Bean可以重写这个方法以定义bean名称。
 func (b *Bean) BeanName() string {
 	return ""
@@ -90,9 +86,10 @@ func inject(v any) any {
 		field := elem.Field(i)
 		kind := field.Kind()
 		fType := field.Type()
-		if fType.String() == "*main.Bean" {
+		if fType.String() == beanTypeStr {
 			continue
 		}
+
 		if kind != reflect.Pointer && kind != reflect.Struct {
 			continue
 		}
@@ -118,10 +115,12 @@ func inject(v any) any {
 func getBean(v any) any {
 	beanName := getBeanKey(v.(BeanSupport))
 	if b, ok := container.GetBean(beanName); ok {
-		return b
+		if !b.completed {
+			// 懒加载注入
+			inject(v)
+		}
+		return b.object
 	}
-
-	inject(v)
 	//container.PutBean(beanName, val.Interface())
 	return nil
 }
