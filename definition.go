@@ -2,10 +2,13 @@ package main
 
 import "reflect"
 
+type beanName string
+type typeName string
+
 // BeanProps bean的定制化属性
 type BeanProps struct {
 	// Name Bean名称
-	Name string
+	Name beanName
 	// Private 是否私有
 	Private bool
 	// Init Bean注入完依赖之后被自动调用的初始化方法。如果Bean本身实现了BeanInitializer接口，则这个方法不会调用
@@ -17,17 +20,21 @@ type beanDefinition struct {
 	BeanProps
 	// beanType bean的具体类型
 	beanType reflect.Type
-	// implements bean实现的所有接口
-	implements []reflect.Type
+	// bean类型对应的简写
+	tName typeName
 }
 
 // beanInstance bean实例
 type beanInstance struct {
 	*beanDefinition
-	// object 实际的bean对象
+	// object 实际的bean对象. 如果bean是private的，则这个值永远为空，每次获取这个依赖都构造新的对象
 	object any
+	// reflectValue 缓存object的反射表示
+	reflectValue reflect.Value
 	// created 实际对象是否由框架创建
 	created bool
+	// completed bean是否已经构造完成
+	completed bool
 }
 
 // Bean 用于嵌套在struct中，声明一个Bean
@@ -49,6 +56,27 @@ type BeanInitializer interface {
 type PostConstruct func(bean any) error
 
 // Register 支持往容器内手工注入一个Bean
-func Register(obj any, props BeanProps) {
+func Register(obj any, props BeanProps) *DIError {
+	beanType := reflect.TypeOf(obj)
+	// 构造beanInstance，并放入graph中
+	definition := &beanDefinition{
+		BeanProps: props,
+		beanType:  beanType,
+		tName:     getTypeName(beanType),
+	}
+	if definition.Name == "" {
+		// 未指定bean名称，则默认用类型名称作为bean名称
+		definition.Name = beanName(definition.tName)
+	}
+	if old, exist := g.nodes[definition.Name]; exist {
+		// 不允许同名的bean
+		return ErrSameBeanName.CreateError(nil, definition.Name, old.instance.tName, definition.tName)
+	}
+	// 构造新的bean实例，放入g容器
+	g.addNode(&beanInstance{object: obj, reflectValue: reflect.ValueOf(obj), beanDefinition: definition, created: false})
+	return nil
+}
 
+func getTypeName(t reflect.Type) typeName {
+	return typeName(t.String())
 }

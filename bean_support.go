@@ -75,7 +75,7 @@ func getBeanKey(t BeanSupport) BeanKey {
 	return BeanKey(beanName)
 }
 
-func inject(v any) any {
+func selfInject(v any) any {
 	var t BeanSupport
 	t = v.(BeanSupport)
 	val := reflect.New(reflect.TypeOf(t).Elem())
@@ -100,7 +100,7 @@ func inject(v any) any {
 		}
 		if fType.Implements(beanType) {
 			// 递归调用getBean，组装bean
-			field.Set(reflect.ValueOf(getBean(field.Interface())))
+			//field.Set(reflect.ValueOf(getBean(field.Interface())))
 		}
 	}
 	t = val.Interface().(BeanSupport)
@@ -110,17 +110,4 @@ func inject(v any) any {
 	}
 
 	return val.Interface()
-}
-
-func getBean(v any) any {
-	beanName := getBeanKey(v.(BeanSupport))
-	if b, ok := container.GetBean(beanName); ok {
-		if !b.completed {
-			// 懒加载注入
-			inject(v)
-		}
-		return b.object
-	}
-	//container.PutBean(beanName, val.Interface())
-	return nil
 }

@@ -14,7 +14,7 @@ Golang  IOC(DI) Framework
   - [ ] 支持使用放通过tag将某个依赖对象定义为Bean
   - [x] Bean自定义属性
     - [ ] 支持通过实现GetBeanProps方法定义Bean属性，如name、是否单例等
-    - [ ] 支持将Bean定义为私有的（非单例）
+    - [ ] 支持将Bean定义为私有的（非单例）, 私有对象不要缓存在容器中，以免gc无法回收
     - [ ] 支持注入后自定义初始化
       - [ ] 支持bean实现Init方法，注入完成后，自动调用init方法
       - [ ] 定义Bean的工具方法，支持传入初始化回调，在注入完成调用回调初始化
@@ -27,6 +27,8 @@ Golang  IOC(DI) Framework
   - [ ] 支持interface类型成员默认按类型进行匿名注入，取第一个实现了interface的bean实例
   - [ ] 支持指定interface类型，将bean注入到slice、map
   - [ ] 支持Setter方法注入???
+  - [ ] 支持手动触发依赖注入
+  - [ ] 支持懒注入（在GetBean的时候注入依赖）
 - [ ] 容器&运行时工具方法（Runtime）
   - [ ] 同类型只能有唯一的匿名Bean（非单例的除外），可以有多个不同名但同类型的Bean
   - [ ] 支持运行时获取Bean
