@@ -42,3 +42,11 @@ func (dg *DependGraph) addEdge(from, to beanName) {
 	fromNode.edgesOut[to] = d
 	toNode.edgesIn[from] = d
 }
+
+func (dg *DependGraph) addNodeEdge(fromNode, toNode *beanNode) {
+	from := fromNode.instance.Name
+	to := fromNode.instance.Name
+	d := &depend{consumer: from, provider: to}
+	fromNode.edgesOut[to] = d
+	toNode.edgesIn[from] = d
+}

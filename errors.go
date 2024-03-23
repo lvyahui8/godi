@@ -30,4 +30,8 @@ var (
 		DIError{ErrorMsg: "Beans with the same name are not allowed. beanName:%s,existType:%s,newType:%s"})
 	ErrTagParseFailed = goenum.NewEnum[DIError]("ErrTagParseFailed",
 		DIError{ErrorMsg: "Tag parsing exception. filedName:%s,tag:%s"})
+	ErrBeanNotFound = goenum.NewEnum[DIError]("ErrBeanNotFound",
+		DIError{ErrorMsg: "Bean [%s] not found"})
+	ErrTypeMisMatch = goenum.NewEnum[DIError]("ErrTypeMisMatch",
+		DIError{ErrorMsg: "Injection type mismatch, expected type %s, actual type %s"})
 )

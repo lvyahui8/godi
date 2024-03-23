@@ -22,59 +22,6 @@ func (b *Bean) Init() error {
 	return nil
 }
 
-type BeanKey string
-
-type Node struct {
-	key       BeanKey
-	object    any
-	completed bool
-	private   bool
-	In        map[BeanKey]*Edge
-	Out       map[BeanKey]*Edge
-}
-
-type Edge struct {
-	from BeanKey
-	to   BeanKey
-	// 指针依赖还是struct依赖
-	ptr bool
-}
-
-// Graph bean的依赖关系图
-type Graph struct {
-	nodes map[BeanKey]*Node
-}
-
-func NewGraph() *Graph {
-	return &Graph{
-		nodes: make(map[BeanKey]*Node),
-	}
-}
-
-func (g *Graph) AddEdge(from, to Node) {
-	if from.Out != nil {
-		if _, ok := from.Out[to.key]; ok {
-			// 边已经存在
-			return
-		}
-	}
-	edge := &Edge{from: from.key, to: to.key}
-	from.Out[to.key] = edge
-	to.In[from.key] = edge
-}
-
-func getBeanKey(t BeanSupport) BeanKey {
-	var beanName string
-	val := reflect.ValueOf(t)
-	if !val.IsNil() {
-		beanName = t.BeanName()
-	}
-	if beanName == "" {
-		beanName = val.Type().String()
-	}
-	return BeanKey(beanName)
-}
-
 func selfInject(v any) any {
 	var t BeanSupport
 	t = v.(BeanSupport)

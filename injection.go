@@ -103,6 +103,21 @@ func inject(node *beanNode) *DIError {
 			continue
 		}
 		// 根据tag决策注入逻辑。
+		var dependNode *beanNode
+		if len(tag.Name) > 0 {
+			// 命名注入
+			dependNode = g.nodes[tag.Name]
+			if dependNode == nil {
+				return ErrBeanNotFound.CreateError(nil, tag.Name)
+			}
+			if !dependNode.instance.beanType.AssignableTo(fType) {
+				return ErrTypeMisMatch.CreateError(nil, getTypeName(fType), dependNode.instance.tName)
+			}
+			g.addNodeEdge(node, dependNode)
+			fieldValue.Set(reflect.ValueOf(dependNode.instance.object))
+			continue
+		}
+		// todo 匿名注入
 	}
 	// 继续广度遍历子节点
 	for dependName := range node.edgesOut {
