@@ -17,7 +17,9 @@ const TagAutowired = "autowired"
 // autowired:"optional"
 // autowired:"xxxService,optional"
 type AutowiredTags struct {
-	BeanProps
+	Name beanName
+	// 是否私有注入
+	Private bool
 	// Optional 是否可选注入，默认为必须注入
 	Optional bool
 }
@@ -108,6 +110,10 @@ func inject(node *beanNode) *DIError {
 			// 命名注入
 			dependNode = g.nodes[tag.Name]
 			if dependNode == nil {
+				if tag.Optional {
+					// 弱依赖
+					continue
+				}
 				return ErrBeanNotFound.CreateError(nil, tag.Name)
 			}
 			if !dependNode.instance.beanType.AssignableTo(fType) {
@@ -117,10 +123,36 @@ func inject(node *beanNode) *DIError {
 			fieldValue.Set(reflect.ValueOf(dependNode.instance.object))
 			continue
 		}
+		// fType.Kind() == reflect.Ptr 检查必须为指针类型
 		// todo 匿名注入
+		filedTypeName := getTypeName(fType)
+		dependNode = g.nodes[beanName(filedTypeName)]
+		if dependNode == nil {
+			// 构造一个新的node, 并放入图中
+			obj := reflect.New(fType.Elem()).Interface()
+			instance := newBeanInstance(obj, true, BeanProps{
+				Name: beanName(filedTypeName),
+			})
+			dependNode = g.addNode(instance)
+		}
+		if tag.Private {
+			// dependNode复制一份，先行调用inject走单独的注入逻辑，新的bean要放入容器
+			// 依赖关系设置为private
+		} else {
+			if dependNode.instance.AlwaysNew {
+				// dependNode复制一份，先行调用inject走单独的注入逻辑，bean不要放入容器
+				// 依赖关系设置为private
+			} else {
+				// 使用现有的bean注入
+			}
+		}
 	}
 	// 继续广度遍历子节点
-	for dependName := range node.edgesOut {
+	for dependName, edge := range node.edgesOut {
+		if edge.private {
+			// 私有的在前面已经单独注入
+			continue
+		}
 		diError := inject(g.nodes[dependName])
 		if diError != nil {
 			return diError

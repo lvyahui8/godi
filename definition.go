@@ -9,8 +9,9 @@ type typeName string
 type BeanProps struct {
 	// Name Bean名称
 	Name beanName
-	// Private 是否私有
-	Private bool
+	// AlwaysNew 默认是否重复使用现有实例，还是每次构建最新的
+	// 并不表示严格单例，某些情况，即使AlwaysNew=false, 也可能会new新的，比如tag为private私有注入时
+	AlwaysNew bool
 	// Init Bean注入完依赖之后被自动调用的初始化方法。如果Bean本身实现了BeanInitializer接口，则这个方法不会调用
 	Init PostConstruct
 }
@@ -55,8 +56,7 @@ type BeanInitializer interface {
 
 type PostConstruct func(bean any) error
 
-// Register 支持往容器内手工注入一个Bean
-func Register(obj any, props BeanProps) *DIError {
+func newBeanInstance(obj any, autoCreated bool, props BeanProps) *beanInstance {
 	beanType := reflect.TypeOf(obj)
 	// 构造beanInstance，并放入graph中
 	definition := &beanDefinition{
@@ -68,12 +68,19 @@ func Register(obj any, props BeanProps) *DIError {
 		// 未指定bean名称，则默认用类型名称作为bean名称
 		definition.Name = beanName(definition.tName)
 	}
-	if old, exist := g.nodes[definition.Name]; exist {
-		// 不允许同名的bean
-		return ErrSameBeanName.CreateError(nil, definition.Name, old.instance.tName, definition.tName)
-	}
+
 	// 构造新的bean实例，放入g容器
-	g.addNode(&beanInstance{object: obj, reflectValue: reflect.ValueOf(obj), beanDefinition: definition, created: false})
+	return &beanInstance{object: obj, reflectValue: reflect.ValueOf(obj), beanDefinition: definition, created: autoCreated}
+}
+
+// Register 支持往容器内手工注入一个Bean
+func Register(obj any, props BeanProps) *DIError {
+	instance := newBeanInstance(obj, false, props)
+	if old, exist := g.nodes[instance.Name]; exist {
+		// 不允许同名的bean
+		return ErrSameBeanName.CreateError(nil, instance.Name, old.instance.tName, instance.tName)
+	}
+	g.addNode(instance)
 	return nil
 }
 
