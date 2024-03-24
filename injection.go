@@ -133,17 +133,36 @@ func inject(node *beanNode) *DIError {
 			instance := newBeanInstance(obj, true, BeanProps{
 				Name: beanName(filedTypeName),
 			})
-			dependNode = g.addNode(instance)
+			dependNode = g.addNodeByInstance(instance)
 		}
 		if tag.Private {
 			// dependNode复制一份，先行调用inject走单独的注入逻辑，新的bean要放入容器
+			privateObj := reflect.New(fType.Elem()).Interface()
+			privateNode := newNode(privateObj, true)
+			diError = inject(privateNode)
+			if diError != nil {
+				return diError
+			}
+			fieldValue.Set(reflect.ValueOf(privateObj))
+			g.addNode(node)
 			// 依赖关系设置为private
+			g.addNodeEdge(node, dependNode)
+			node.edgesOut[dependNode.instance.Name].private = true
 		} else {
 			if dependNode.instance.AlwaysNew {
 				// dependNode复制一份，先行调用inject走单独的注入逻辑，bean不要放入容器
-				// 依赖关系设置为private
+				privateObj := reflect.New(fType.Elem()).Interface()
+				privateNode := newNode(privateObj, true)
+				diError = inject(privateNode)
+				if diError != nil {
+					return diError
+				}
+				fieldValue.Set(reflect.ValueOf(privateObj))
+				// 与当前节点的依赖关系设置为private
+				node.edgesOut[dependNode.instance.Name].private = true
 			} else {
 				// 使用现有的bean注入
+				fieldValue.Set(reflect.ValueOf(dependNode.instance.object))
 			}
 		}
 	}

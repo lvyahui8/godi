@@ -21,18 +21,23 @@ type beanNode struct {
 	edgesIn map[beanName]*depend
 }
 
-// 深拷贝一份node
-func copyNode(node *beanNode) *beanNode {
-	//newNode := &beanNode{}
-	return nil
+func newNode(obj any, autoCreate bool) *beanNode {
+	instance := newBeanInstance(obj, autoCreate, BeanProps{})
+	return &beanNode{
+		instance: instance,
+		edgesOut: make(map[beanName]*depend),
+		edgesIn:  make(map[beanName]*depend),
+	}
 }
+
+// 深拷贝一份node
 
 // DependGraph 依赖图。 构建依赖关系过程中，往依赖图中添加依赖
 type DependGraph struct {
 	nodes map[beanName]*beanNode
 }
 
-func (dg *DependGraph) addNode(instance *beanInstance) *beanNode {
+func (dg *DependGraph) addNodeByInstance(instance *beanInstance) *beanNode {
 	if v, exist := dg.nodes[instance.Name]; exist {
 		return v
 	}
@@ -43,6 +48,10 @@ func (dg *DependGraph) addNode(instance *beanInstance) *beanNode {
 	}
 	dg.nodes[instance.Name] = v
 	return v
+}
+
+func (dg *DependGraph) addNode(n *beanNode) {
+	dg.nodes[n.instance.Name] = n
 }
 
 func (dg *DependGraph) addEdge(from, to beanName) {

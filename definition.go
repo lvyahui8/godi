@@ -80,7 +80,7 @@ func Register(obj any, props BeanProps) *DIError {
 		// 不允许同名的bean
 		return ErrSameBeanName.CreateError(nil, instance.Name, old.instance.tName, instance.tName)
 	}
-	g.addNode(instance)
+	g.addNodeByInstance(instance)
 	return nil
 }
 
