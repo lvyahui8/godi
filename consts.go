@@ -1,4 +1,4 @@
-package main
+package godi
 
 import "github.com/lvyahui8/goenum"
 

@@ -1,4 +1,4 @@
-package main
+package godi
 
 var g *DependGraph = &DependGraph{
 	nodes: make(map[beanName]*beanNode),

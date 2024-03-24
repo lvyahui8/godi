@@ -1,4 +1,4 @@
-package main
+package godi
 
 func GetBeanByName(name string) (bean any, b bool) {
 	return

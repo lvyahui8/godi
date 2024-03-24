@@ -1,9 +1,12 @@
-package main
+package internal
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/lvyahui8/godi"
+)
 
 type UserRepo struct {
-	*Bean
+	*godi.Bean
 }
 
 func (repo *UserRepo) GetId() int {
@@ -11,7 +14,7 @@ func (repo *UserRepo) GetId() int {
 }
 
 type UserDao struct {
-	*Bean
+	*godi.Bean
 	Repo *UserRepo
 }
 
@@ -24,7 +27,7 @@ type UserService interface {
 }
 
 type NormalUserService struct {
-	*Bean
+	*godi.Bean
 	Dao *UserDao
 }
 
@@ -33,7 +36,7 @@ func (us *NormalUserService) SayHello() {
 }
 
 type KeyUserService struct {
-	*Bean
+	*godi.Bean
 }
 
 func (us *KeyUserService) SayHello() {
@@ -41,7 +44,7 @@ func (us *KeyUserService) SayHello() {
 }
 
 type HomeController struct {
-	*Bean
+	*godi.Bean
 	UserService *UserService `inject:"KeyUserService"`
 	content     string
 }
